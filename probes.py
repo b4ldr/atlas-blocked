@@ -3,33 +3,18 @@ import socket
 
 class Probes(object):
     '''probe definition used to create a new measuerment'''
-    def __init__(self, value, probe_type, requested=1):
+    def __init__(self, value, requested=1):
         '''initiate the probe object'''
         self.value = value.lower()
-        self.probe_type = probe_type
         self.requested = requested
-        {
-            'asn': self.check_asn,
-            'country': self.check_country,
-            'msn': self.check_msn,
-            'prefix': self.check_prefix,
-            'probes': self.check_probes,
+        self.check(self.value)
 
-        }.get(probe_type)(value)
+    def check(self, value):
+        raise NotImplementedError('need to implment this in a derived class')
 
-    def _get_ip_version(self, address):
-        '''return the ip version of an address'''
-        try:
-            socket.inet_pton(socket.AF_INET, address)
-            return 4
-        except socket.error:
-            try:
-                socket.inet_pton(socket.AF_INET6, address)
-                return 6
-            except socket.error:
-                raise ValueError('%s is not a valid IP address' % address)
+class ProbesByAsn(Probes):
 
-    def check_asn(self, asn):
+    def check(self, asn):
         '''check the value supplied is a correctly formated asn'''
         
         #check if we have an asn with dot notation.  if so change it to the decimal format
@@ -57,7 +42,9 @@ class Probes(object):
             raise ValueError('%s is not a valid ASPLAIN or ASDOT number' % asn)
 
 
-    def check_country(self, country):
+class ProbesByCountry(Probes):
+
+    def check(self, country):
         '''check the value supplied is a correctly formated iso country code'''
         #we only check if the country code is 2 characters not if it is valid
         if len(country) == 2:
@@ -68,7 +55,8 @@ class Probes(object):
         else:
             raise ValueError('%s is not a valid iso3166 alpha 2 code' % country)
 
-    def check_msn(self, msn):
+class ProbesByMsn(Probes):
+    def check(self, msn):
         '''check the value supplied is a correctly formated msn id'''
         try:
             msn = int(msn)
@@ -78,7 +66,21 @@ class Probes(object):
             e.args += ('%s is not a valid msn' % msn, )
             raise
 
-    def check_prefix(self, prefix):
+class ProbesByPrefix(Probes):
+
+    def _get_ip_version(self, address):
+        '''return the ip version of an address'''
+        try:
+            socket.inet_pton(socket.AF_INET, address)
+            return 4
+        except socket.error:
+            try:
+                socket.inet_pton(socket.AF_INET6, address)
+                return 6
+            except socket.error:
+                raise ValueError('%s is not a valid IP address' % address)
+
+    def check(self, prefix):
         '''check the value supplied is a correctly formated prefix'''
         prefix_group = prefix.split('/')
         if len(prefix_group) == 2:
@@ -98,7 +100,9 @@ class Probes(object):
         else:
             raise ValueError('%s is not a valid prefix' % prefix)
 
-    def check_probes(self, probes):
+class ProbesByProbeID(Probes):
+
+    def check(self, probes):
         '''check the value supplied is a correctly formated probes list'''
         for probe in probes.split(','):
             try:
@@ -107,7 +111,3 @@ class Probes(object):
             except ValueError as e:
                 e.args += ('%s is not a valid probe' % probe, )
                 raise
-
-
-
-
