@@ -1,7 +1,7 @@
 import unittest
 from probes import *
 
-class TestProbesBy(unittest.TestCase):
+class TestProbes(unittest.TestCase):
 
     def testGoodAsnPlain(self):
         '''Test a valid ASPLAIN number'''
